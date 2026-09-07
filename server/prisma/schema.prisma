@@ -1,0 +1,46 @@
+// =========================================================
+//  Pure Bites — database schema
+//  Phase 0: MenuItem only. More models are added per phase:
+//    Phase 2  ContactMessage
+//    Phase 3  Reservation
+//    Phase 4  Order + OrderItem
+//    Phase 5  AdminUser
+//
+//  Dev database: SQLite (a single file at prisma/dev.db).
+//  Production:  change `provider` to "postgresql" and set
+//               DATABASE_URL to a Postgres connection string.
+// =========================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+/// A single item on the menu. This table replaces the hardcoded
+/// MENU_ITEMS array that currently lives in the frontend script.js.
+model MenuItem {
+  id          String   @id @default(cuid())
+  /// Stable short code kept in parity with the old frontend ids
+  /// (e.g. "b1", "s3", "d2"). Handy for seeding and debugging.
+  code        String   @unique
+  category    String // "burgers" | "sandwiches" | "sides" | "drinks"
+  name        String
+  description String
+  /// Whole Pakistani rupees. Integer on purpose — never store money as a float.
+  price       Int
+  /// Optional badge shown on the card ("Bestseller", "Spicy", ...). Empty = no badge.
+  tag         String   @default("")
+  imageUrl    String
+  /// Hidden from the public menu when false, but kept for order history.
+  isAvailable Boolean  @default(true)
+  /// Lower numbers show first within a category.
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([category, sortOrder])
+}

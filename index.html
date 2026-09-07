@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- ===== SEO ===== -->
+  <title>Pure Bites — Burgers &amp; Sandwiches in Charsadda | Open 24/7</title>
+  <meta name="description" content="Pure Bites serves fresh, hand-crafted burgers and sandwiches in Charsadda Utmanzai. Open 24/7. Order online or reserve a table.">
+  <meta name="theme-color" content="#0F1B2D">
+  <link rel="canonical" href="https://purebites.example/">
+
+  <!-- Open Graph (how the link looks when shared on WhatsApp / Facebook) -->
+  <meta property="og:type" content="restaurant">
+  <meta property="og:title" content="Pure Bites — Burgers &amp; Sandwiches, Charsadda">
+  <meta property="og:description" content="Fresh food, pure taste. Open 24/7 in Charsadda Utmanzai.">
+  <meta property="og:image" content="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=1200&q=80">
+
+  <!-- Inline SVG favicon — no extra file needed -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230F1B2D'/><text y='72' x='50' text-anchor='middle' font-size='58' font-family='Georgia,serif' fill='%23D4A017'>P</text></svg>">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
+  <script src="script.js" defer></script>
+</head>
+<body>
+
+<a class="skip-link" href="#menu">Skip to menu</a>
+
+<!-- ============ TOP BAR ============ -->
+<div class="topbar">
+  <div class="topbar-inner">
+    <span class="topbar-item"><span aria-hidden="true">📍</span> Food Street, Utmanzai, Charsadda</span>
+    <span class="topbar-item"><span aria-hidden="true">🕐</span> Open 24 Hours · 7 Days</span>
+    <a class="topbar-item topbar-link" href="tel:+923153155632"><span aria-hidden="true">📞</span> +92 315 3155632</a>
+  </div>
+</div>
+
+<!-- ============ HEADER ============ -->
+<header class="site-header" id="siteHeader">
+  <nav class="nav" aria-label="Main navigation">
+    <a href="#home" class="brand">
+      <span class="brand-mark" aria-hidden="true">P</span>
+      <span class="brand-text">Pure <em>Bites</em></span>
+    </a>
+
+    <ul class="nav-links" id="navLinks">
+      <li><a href="#home">Home</a></li>
+      <li><a href="#menu">Menu</a></li>
+      <li><a href="#reserve">Reservations</a></li>
+      <li><a href="#gallery">Gallery</a></li>
+      <li><a href="#about">About</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+
+    <div class="nav-actions">
+      <a href="#order" class="cart-button" id="cartButton" aria-label="View your order">
+        <span aria-hidden="true">🛒</span>
+        <span class="cart-count" id="cartCount">0</span>
+      </a>
+      <button class="hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false" aria-controls="navLinks">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+</header>
+
+<!-- ============ HERO ============ -->
+<section class="hero" id="home">
+  <div class="hero-bg" aria-hidden="true"></div>
+  <div class="hero-inner">
+    <div class="hero-text reveal">
+      <p class="eyebrow"><span class="eyebrow-line"></span> Charsadda · Since 2020</p>
+      <h1>Real Ingredients.<br><em>Serious</em> Flavour.</h1>
+      <p class="lead">
+        Hand-pressed patties, bread baked the same morning, and sauces we make
+        ourselves. No shortcuts — just food worth driving for.
+      </p>
+      <div class="hero-cta">
+        <a href="#menu" class="btn btn-primary">Explore the Menu</a>
+        <a href="#reserve" class="btn btn-ghost">Reserve a Table</a>
+      </div>
+
+      <ul class="hero-stats">
+        <li><strong>24/7</strong><span>Always open</span></li>
+        <li><strong>30 min</strong><span>Avg. delivery</span></li>
+        <li><strong>4.8★</strong><span>Guest rating</span></li>
+      </ul>
+    </div>
+
+    <div class="hero-media reveal">
+      <img src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=900&q=80"
+           alt="A double smash burger with melted cheese and fresh lettuce">
+      <div class="hero-badge">
+        <span class="hero-badge-top">Chef's Pick</span>
+        <span class="hero-badge-main">Pure Signature Burger</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ VALUE STRIP ============ -->
+<section class="value-strip" aria-label="Why choose Pure Bites">
+  <div class="value-inner">
+    <div class="value-item reveal">
+      <span class="value-icon" aria-hidden="true">🔥</span>
+      <h3>Cooked to Order</h3>
+      <p>Nothing sits under a heat lamp. Your food starts when you order it.</p>
+    </div>
+    <div class="value-item reveal">
+      <span class="value-icon" aria-hidden="true">🌿</span>
+      <h3>Fresh Daily</h3>
+      <p>Produce sourced every morning from local Charsadda suppliers.</p>
+    </div>
+    <div class="value-item reveal">
+      <span class="value-icon" aria-hidden="true">🛵</span>
+      <h3>Fast Delivery</h3>
+      <p>Free delivery within 5 km. Cash on delivery or pay online.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ MENU ============ -->
+<section id="menu" class="section menu-section">
+  <div class="section-head reveal">
+    <p class="section-eyebrow">Our Menu</p>
+    <h2>Made Fresh, <em>Every Order</em></h2>
+    <p class="section-sub">Sixteen reasons to skip cooking tonight.</p>
+  </div>
+
+  <!-- Filter tabs. data-filter is read by script.js -->
+  <div class="filter-tabs reveal" id="filterTabs" role="tablist" aria-label="Menu categories">
+    <button class="tab is-active" data-filter="all"        role="tab" aria-selected="true">All</button>
+    <button class="tab" data-filter="burgers"    role="tab" aria-selected="false">Burgers</button>
+    <button class="tab" data-filter="sandwiches" role="tab" aria-selected="false">Sandwiches</button>
+    <button class="tab" data-filter="sides"      role="tab" aria-selected="false">Sides</button>
+    <button class="tab" data-filter="drinks"     role="tab" aria-selected="false">Drinks</button>
+  </div>
+
+  <!-- Cards are rendered by script.js from the MENU_ITEMS array -->
+  <div class="menu-grid" id="menuGrid"></div>
+  <p class="menu-empty" id="menuEmpty" hidden>No items in this category yet.</p>
+</section>
+
+<!-- ============ ORDER / CART ============ -->
+<section id="order" class="section order-section">
+  <div class="order-card reveal">
+    <div class="order-head">
+      <h2>Your Order</h2>
+      <button class="link-btn" id="clearOrder" hidden>Clear all</button>
+    </div>
+
+    <ul id="orderList" class="order-list">
+      <li class="order-empty">Nothing here yet — add something from the menu.</li>
+    </ul>
+
+    <div class="order-summary" id="orderSummary" hidden>
+      <div class="summary-row"><span>Subtotal</span><span id="orderSubtotal">Rs. 0</span></div>
+      <div class="summary-row"><span>Delivery</span><span id="orderDelivery">Free</span></div>
+      <div class="summary-row summary-total"><span>Total</span><span id="orderTotal">Rs. 0</span></div>
+    </div>
+
+    <div class="pay-choice" id="payChoice" hidden>
+      <label><input type="radio" name="pay" value="cod" checked> Cash on Delivery</label>
+      <label><input type="radio" name="pay" value="online"> Pay Online</label>
+    </div>
+
+    <button id="placeOrder" class="btn btn-primary btn-block">Place Order</button>
+    <p id="orderMessage" class="order-message" role="status" aria-live="polite"></p>
+  </div>
+</section>
+
+<!-- ============ RESERVATIONS ============ -->
+<section id="reserve" class="section reserve-section">
+  <div class="reserve-inner">
+    <div class="reserve-copy reveal">
+      <p class="section-eyebrow light">Reservations</p>
+      <h2>Save Your <em>Table</em></h2>
+      <p>
+        Family dinner, birthday, or just a table by the window — tell us when
+        you're coming and we'll have it ready. Confirmation by phone within
+        15 minutes.
+      </p>
+      <ul class="reserve-points">
+        <li>Groups up to 20 people</li>
+        <li>No booking fee</li>
+        <li>Free cancellation any time</li>
+      </ul>
+    </div>
+
+    <form class="reserve-form reveal" id="reserveForm" novalidate>
+      <div class="field-row">
+        <div class="field">
+          <label for="resName">Full name</label>
+          <input type="text" id="resName" name="name" placeholder="e.g. Syed Musarrat" required>
+          <small class="error" data-error-for="resName"></small>
+        </div>
+        <div class="field">
+          <label for="resPhone">Phone</label>
+          <input type="tel" id="resPhone" name="phone" placeholder="03XXXXXXXXX" required>
+          <small class="error" data-error-for="resPhone"></small>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="resDate">Date</label>
+          <input type="date" id="resDate" name="date" required>
+          <small class="error" data-error-for="resDate"></small>
+        </div>
+        <div class="field">
+          <label for="resTime">Time</label>
+          <input type="time" id="resTime" name="time" required>
+          <small class="error" data-error-for="resTime"></small>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="resGuests">Guests</label>
+          <select id="resGuests" name="guests">
+            <option value="1">1 person</option>
+            <option value="2" selected>2 people</option>
+            <option value="4">3–4 people</option>
+            <option value="6">5–6 people</option>
+            <option value="10">7–10 people</option>
+            <option value="20">10+ people</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="resSeat">Seating</label>
+          <select id="resSeat" name="seating">
+            <option>Indoor</option>
+            <option>Outdoor</option>
+            <option>Family cabin</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="resNote">Special request <span class="optional">(optional)</span></label>
+        <textarea id="resNote" name="note" rows="3" placeholder="Birthday cake, high chair, quiet corner…"></textarea>
+      </div>
+
+      <button type="submit" class="btn btn-gold btn-block">Confirm Reservation</button>
+      <p id="reserveMessage" class="form-message" role="status" aria-live="polite"></p>
+    </form>
+  </div>
+</section>
+
+<!-- ============ GALLERY ============ -->
+<section id="gallery" class="section gallery-section">
+  <div class="section-head reveal">
+    <p class="section-eyebrow">Gallery</p>
+    <h2>Straight From <em>Our Kitchen</em></h2>
+  </div>
+
+  <div class="gallery-grid reveal">
+    <figure class="g-item g-tall">
+      <img src="https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=800&q=80" alt="Wood-fired pizza fresh from the oven" loading="lazy">
+      <figcaption>Stone-baked</figcaption>
+    </figure>
+    <figure class="g-item">
+      <img src="https://images.unsplash.com/photo-1551782450-a2132b4ba21d?auto=format&fit=crop&w=800&q=80" alt="Stacked cheeseburger with sesame bun" loading="lazy">
+      <figcaption>The classic</figcaption>
+    </figure>
+    <figure class="g-item">
+      <img src="https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=800&q=80" alt="Warm bowl of soup on a rustic table" loading="lazy">
+      <figcaption>Comfort food</figcaption>
+    </figure>
+    <figure class="g-item g-wide">
+      <img src="https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=1000&q=80" alt="Burger and fries served on a wooden board" loading="lazy">
+      <figcaption>Full plate</figcaption>
+    </figure>
+    <figure class="g-item">
+      <img src="https://images.unsplash.com/photo-1600891964092-4316c288032e?auto=format&fit=crop&w=800&q=80" alt="Grilled steak plated with herbs" loading="lazy">
+      <figcaption>Off the grill</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ============ ABOUT ============ -->
+<section id="about" class="section about-section">
+  <div class="about-inner">
+    <div class="about-media reveal">
+      <img src="https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&w=900&q=80" alt="Interior of the Pure Bites dining room" loading="lazy">
+      <div class="about-badge">
+        <strong>6+</strong>
+        <span>Years serving<br>Charsadda</span>
+      </div>
+    </div>
+
+    <div class="about-text reveal">
+      <p class="section-eyebrow">Our Story</p>
+      <h2>A Small Kitchen With <em>High Standards</em></h2>
+      <p>
+        Pure Bites started with one grill and one rule — we don't serve anything
+        we wouldn't feed our own family. That rule hasn't changed.
+      </p>
+      <p>
+        Every patty is pressed by hand. Every sauce is mixed in-house. And
+        because we're open around the clock, the kitchen never goes cold.
+      </p>
+
+      <div class="about-points">
+        <div><strong>100%</strong><span>Fresh beef, never frozen</span></div>
+        <div><strong>Halal</strong><span>Certified suppliers only</span></div>
+      </div>
+
+      <a href="#contact" class="btn btn-outline">Visit Us Today</a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CONTACT ============ -->
+<section id="contact" class="section contact-section">
+  <div class="section-head reveal">
+    <p class="section-eyebrow light">Contact</p>
+    <h2>Get in <em>Touch</em></h2>
+    <p class="section-sub">Questions, catering, or bulk orders — we reply fast.</p>
+  </div>
+
+  <div class="contact-inner">
+    <div class="contact-details reveal">
+      <div class="contact-card">
+        <span class="contact-icon" aria-hidden="true">📍</span>
+        <h3>Location</h3>
+        <p>Food Street, Utmanzai<br>Charsadda, KPK</p>
+      </div>
+      <div class="contact-card">
+        <span class="contact-icon" aria-hidden="true">📞</span>
+        <h3>Phone</h3>
+        <p><a href="tel:+923153155632">+92 315 3155632</a></p>
+      </div>
+      <div class="contact-card">
+        <span class="contact-icon" aria-hidden="true">✉️</span>
+        <h3>Email</h3>
+        <p><a href="mailto:purebitestest@gmail.com">purebitestest@gmail.com</a></p>
+      </div>
+      <div class="contact-card">
+        <span class="contact-icon" aria-hidden="true">🕐</span>
+        <h3>Hours</h3>
+        <p>Open 24 hours<br>Seven days a week</p>
+      </div>
+    </div>
+
+    <form class="contact-form" id="contactForm" novalidate>
+      <div class="field">
+        <label for="cName">Your name</label>
+        <input type="text" id="cName" placeholder="Full name" required>
+        <small class="error" data-error-for="cName"></small>
+      </div>
+      <div class="field">
+        <label for="cEmail">Email</label>
+        <input type="email" id="cEmail" placeholder="you@example.com" required>
+        <small class="error" data-error-for="cEmail"></small>
+      </div>
+      <div class="field">
+        <label for="cMsg">Message</label>
+        <textarea id="cMsg" rows="5" placeholder="How can we help?" required></textarea>
+        <small class="error" data-error-for="cMsg"></small>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">Send Message</button>
+      <p id="formMessage" class="form-message" role="status" aria-live="polite"></p>
+    </form>
+  </div>
+</section>
+
+<!-- ============ FOOTER ============ -->
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-col footer-brand">
+      <a href="#home" class="brand">
+        <span class="brand-mark" aria-hidden="true">P</span>
+        <span class="brand-text">Pure <em>Bites</em></span>
+      </a>
+      <p>Fresh food, pure taste. Serving Charsadda around the clock since 2020.</p>
+      <div class="socials">
+        <a href="#" aria-label="Facebook">Fb</a>
+        <a href="#" aria-label="Instagram">Ig</a>
+        <a href="#" aria-label="WhatsApp">Wa</a>
+      </div>
+    </div>
+
+    <div class="footer-col">
+      <h4>Explore</h4>
+      <ul>
+        <li><a href="#menu">Menu</a></li>
+        <li><a href="#reserve">Reservations</a></li>
+        <li><a href="#gallery">Gallery</a></li>
+        <li><a href="#about">About Us</a></li>
+      </ul>
+    </div>
+
+    <div class="footer-col">
+      <h4>Order</h4>
+      <ul>
+        <li><a href="#order">Your Cart</a></li>
+        <li><a href="#menu">Burgers</a></li>
+        <li><a href="#menu">Sandwiches</a></li>
+        <li><a href="#contact">Bulk &amp; Catering</a></li>
+      </ul>
+    </div>
+
+    <div class="footer-col">
+      <h4>Visit</h4>
+      <ul class="footer-contact">
+        <li>Food Street, Utmanzai<br>Charsadda, KPK</li>
+        <li><a href="tel:+923153155632">+92 315 3155632</a></li>
+        <li><a href="mailto:purebitestest@gmail.com">purebitestest@gmail.com</a></li>
+        <li class="open-now"><span class="dot"></span> Open now · 24/7</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <p>© <span id="year">2026</span> Pure Bites. All rights reserved.</p>
+    <p>Built by Syed Musarrat Shah</p>
+  </div>
+</footer>
+
+<!-- Toast notification (shown by script.js) -->
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+</body>
+</html>
