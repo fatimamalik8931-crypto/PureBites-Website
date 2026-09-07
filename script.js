@@ -17,7 +17,7 @@
    One array is the single source of truth. Add an item here
    and it appears on the site automatically — no HTML editing.
    ========================================================= */
-const MENU_ITEMS = [
+const FALLBACK_MENU_ITEMS = [
   // ---------- BURGERS ----------
   { id: 'b1', cat: 'burgers', name: 'Pure Signature Burger', price: 750, tag: 'Chef’s Pick',
     desc: 'Double smashed beef, aged cheddar, house sauce, brioche bun.',
@@ -87,6 +87,12 @@ const MENU_ITEMS = [
     img: 'https://images.unsplash.com/photo-1461023058943-07fcbe16d735?auto=format&fit=crop&w=600&q=80' }
 ];
 
+// The menu the page actually renders. It starts as the built-in fallback
+// list above, then initMenu() (section 3) swaps in live data from the
+// backend: GET /api/menu. If that request fails, the fallback stays —
+// the site is never left without a menu.
+let MENU_ITEMS = FALLBACK_MENU_ITEMS;
+
 const DELIVERY_FREE_OVER = 0; // delivery is free — change this to charge above/below a threshold
 
 /* =========================================================
@@ -124,6 +130,10 @@ function toast(message) {
    ========================================================= */
 const menuGrid  = $('#menuGrid');
 const menuEmpty = $('#menuEmpty');
+
+// Remembers which category tab is active, so a re-render triggered by
+// the menu finishing loading keeps the user's current filter.
+let activeFilter = 'all';
 
 function renderMenu(filter = 'all') {
   if (!menuGrid) return;
@@ -171,8 +181,72 @@ if (filterTabs) {
       t.setAttribute('aria-selected', String(active));
     });
 
-    renderMenu(tab.dataset.filter);
+    activeFilter = tab.dataset.filter;
+    renderMenu(activeFilter);
   });
+}
+
+/* ---------------------------------------------------------
+   Menu loading — fetch the live menu from the API on page load.
+   While the request is in flight we show skeleton cards; if it
+   fails we fall back to FALLBACK_MENU_ITEMS and show a small note.
+   The design is unchanged — these are just states of the same
+   menu section.
+   --------------------------------------------------------- */
+function renderMenuSkeleton(count = 6) {
+  if (!menuGrid) return;
+  if (menuEmpty) menuEmpty.hidden = true;
+  menuGrid.innerHTML = Array.from({ length: count }).map(() => `
+    <article class="menu-card menu-card--skeleton" aria-hidden="true">
+      <div class="menu-thumb sk"></div>
+      <div class="menu-body">
+        <span class="sk sk-line" style="width:70%"></span>
+        <span class="sk sk-line" style="width:45%"></span>
+        <span class="sk sk-btn"></span>
+      </div>
+    </article>
+  `).join('');
+}
+
+function setMenuNote(message) {
+  if (!menuGrid) return;
+  let note = $('#menuNote');
+  if (!message) {
+    if (note) note.hidden = true;
+    return;
+  }
+  if (!note) {
+    note = document.createElement('p');
+    note.id = 'menuNote';
+    note.className = 'menu-note';
+    note.setAttribute('role', 'status');
+    menuGrid.before(note);
+  }
+  note.textContent = message;
+  note.hidden = false;
+}
+
+async function initMenu() {
+  renderMenuSkeleton();
+
+  try {
+    const res = await fetch('/api/menu', { headers: { Accept: 'application/json' } });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+    const data = await res.json();
+    if (!data || !Array.isArray(data.items) || data.items.length === 0) {
+      throw new Error('Empty menu response');
+    }
+
+    MENU_ITEMS = data.items;
+    setMenuNote('');
+  } catch (err) {
+    console.warn('[menu] Live menu unavailable, using built-in list:', err.message);
+    MENU_ITEMS = FALLBACK_MENU_ITEMS;
+    setMenuNote('Showing our standard menu — live prices could not be loaded just now.');
+  } finally {
+    renderMenu(activeFilter);
+  }
 }
 
 /* =========================================================
@@ -539,5 +613,5 @@ const yearEl = $('#year');
 if (yearEl) yearEl.textContent = new Date().getFullYear();
 
 /* --- Boot --- */
-renderMenu('all');
+initMenu();   // fetches the live menu, then renders (falls back to the built-in list)
 renderCart();

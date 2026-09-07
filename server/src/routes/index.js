@@ -10,8 +10,10 @@
 
 import { Router } from 'express';
 import { healthRouter } from './health.routes.js';
+import { menuRouter } from './menu.routes.js';
 import { readLimiter } from '../middleware/rateLimit.js';
 
 export const apiRouter = Router();
 
 apiRouter.use('/health', readLimiter, healthRouter);
+apiRouter.use('/menu', readLimiter, menuRouter);
