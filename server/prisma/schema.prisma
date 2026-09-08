@@ -37,10 +37,14 @@ model MenuItem {
   imageUrl    String
   /// Hidden from the public menu when false, but kept for order history.
   isAvailable Boolean  @default(true)
+  /// Highlighted item (e.g. "Chef's Pick"). Not used by the public site yet —
+  /// exposed by the API so the admin dashboard (a later phase) can manage it.
+  isFeatured  Boolean  @default(false)
   /// Lower numbers show first within a category.
   sortOrder   Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   @@index([category, sortOrder])
+  @@index([isAvailable, sortOrder])
 }

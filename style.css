@@ -907,6 +907,8 @@ a { color: inherit; }
   border-radius: var(--r-sm);
   padding: 10px 16px;
 }
+.menu-note .link-btn { color: var(--navy-800); }
+.menu-note .link-btn:hover { color: var(--red); }
 
 /* Skeleton placeholder cards shown while the menu is being fetched */
 .menu-card--skeleton { pointer-events: none; }

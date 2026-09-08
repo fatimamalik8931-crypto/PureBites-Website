@@ -144,7 +144,13 @@ function renderMenu(filter = 'all') {
 
   if (items.length === 0) {
     menuGrid.innerHTML = '';
-    if (menuEmpty) menuEmpty.hidden = false;
+    if (menuEmpty) {
+      // Distinguish "this category is empty" from "the whole menu is empty".
+      menuEmpty.textContent = MENU_ITEMS.length === 0
+        ? 'Our menu is being updated — please check back shortly.'
+        : 'No items in this category yet.';
+      menuEmpty.hidden = false;
+    }
     return;
   }
   if (menuEmpty) menuEmpty.hidden = true;
@@ -208,13 +214,17 @@ function renderMenuSkeleton(count = 6) {
   `).join('');
 }
 
-function setMenuNote(message) {
+// Shows / hides the small line above the grid. Pass an onRetry callback
+// to append a "Try again" button (reuses the existing .link-btn style).
+function setMenuNote(message, onRetry) {
   if (!menuGrid) return;
   let note = $('#menuNote');
+
   if (!message) {
-    if (note) note.hidden = true;
+    if (note) { note.hidden = true; note.textContent = ''; }
     return;
   }
+
   if (!note) {
     note = document.createElement('p');
     note.id = 'menuNote';
@@ -222,7 +232,19 @@ function setMenuNote(message) {
     note.setAttribute('role', 'status');
     menuGrid.before(note);
   }
+
   note.textContent = message;
+
+  if (typeof onRetry === 'function') {
+    note.append(' ');
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'link-btn';
+    btn.textContent = 'Try again';
+    btn.addEventListener('click', () => { setMenuNote(''); onRetry(); });
+    note.append(btn);
+  }
+
   note.hidden = false;
 }
 
@@ -234,16 +256,16 @@ async function initMenu() {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
     const data = await res.json();
-    if (!data || !Array.isArray(data.items) || data.items.length === 0) {
-      throw new Error('Empty menu response');
-    }
+    if (!data || !Array.isArray(data.items)) throw new Error('Malformed menu response');
 
+    // A genuinely empty list is a valid response, not an error — let
+    // renderMenu() show the "menu is being updated" empty state.
     MENU_ITEMS = data.items;
     setMenuNote('');
   } catch (err) {
     console.warn('[menu] Live menu unavailable, using built-in list:', err.message);
     MENU_ITEMS = FALLBACK_MENU_ITEMS;
-    setMenuNote('Showing our standard menu — live prices could not be loaded just now.');
+    setMenuNote('Showing our standard menu — live prices could not be loaded just now.', initMenu);
   } finally {
     renderMenu(activeFilter);
   }

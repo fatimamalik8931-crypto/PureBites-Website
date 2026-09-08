@@ -34,6 +34,7 @@ async function main() {
         tag: item.tag ?? '',
         imageUrl: item.imageUrl,
         isAvailable: true,
+        isFeatured: item.featured ?? false,
         sortOrder: i, // preserve the current on-screen order
       },
       update: {
@@ -43,6 +44,7 @@ async function main() {
         price: item.price,
         tag: item.tag ?? '',
         imageUrl: item.imageUrl,
+        isFeatured: item.featured ?? false,
         sortOrder: i,
       },
     });
