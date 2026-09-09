@@ -9,6 +9,7 @@
 
 import { PrismaClient } from '@prisma/client';
 import { MENU_SEED } from './menu-seed-data.js';
+import { hashPassword } from '../src/lib/password.js';
 
 const prisma = new PrismaClient();
 
@@ -55,6 +56,43 @@ async function main() {
 
   const total = await prisma.menuItem.count();
   console.log(`Done. ${created} created, ${updated} updated. ${total} menu items in the database.`);
+
+  await seedAdmin();
+}
+
+/**
+ * Create the first admin account from .env (ADMIN_EMAIL / ADMIN_PASSWORD /
+ * ADMIN_NAME). Safe to re-run:
+ *   - account missing        → create it
+ *   - account already exists → leave the password untouched, just refresh
+ *                              the name and make sure it's active
+ * To reset a forgotten password, delete the row (or use `prisma studio`)
+ * and run the seed again.
+ */
+async function seedAdmin() {
+  const email = (process.env.ADMIN_EMAIL || '').trim().toLowerCase();
+  const password = process.env.ADMIN_PASSWORD || '';
+  const name = (process.env.ADMIN_NAME || '').trim() || 'Pure Bites Admin';
+
+  if (!email || !password) {
+    console.log('Skipping admin seed — set ADMIN_EMAIL and ADMIN_PASSWORD in .env to create one.');
+    return;
+  }
+  if (password.length < 8) {
+    console.warn('⚠  ADMIN_PASSWORD is shorter than 8 characters — use a stronger one before deploying.');
+  }
+
+  const existing = await prisma.adminUser.findUnique({ where: { email } });
+  if (existing) {
+    await prisma.adminUser.update({ where: { email }, data: { name, isActive: true } });
+    console.log(`Admin already exists: ${email} (password left unchanged).`);
+    return;
+  }
+
+  await prisma.adminUser.create({
+    data: { email, name, passwordHash: await hashPassword(password) },
+  });
+  console.log(`Admin created: ${email}`);
 }
 
 main()

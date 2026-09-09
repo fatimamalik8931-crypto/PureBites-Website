@@ -4,7 +4,7 @@
 //    Phase 2  ContactMessage    ✅ added
 //    Phase 3  Reservation        ✅ added
 //    Phase 4  Order + OrderItem  ✅ added
-//    Phase 5  AdminUser
+//    Phase 5  AdminUser          ✅ added
 //
 //  Dev database: SQLite (a single file at prisma/dev.db).
 //  Production:  change `provider` to "postgresql" and set
@@ -141,6 +141,32 @@ model Order {
 
   @@index([status, createdAt])
   @@index([createdAt])
+}
+
+/// A staff account that can sign in to the admin dashboard (Phase 6+).
+///
+/// There is no public sign-up: the first account is created by the seed
+/// script from ADMIN_EMAIL / ADMIN_PASSWORD / ADMIN_NAME in .env. More
+/// admins can be added later from the dashboard.
+///
+/// Password rule: only the bcrypt *hash* is ever stored — never the raw
+/// password. See src/lib/password.js.
+model AdminUser {
+  id           String @id @default(cuid())
+  /// Login identifier. Stored lower-cased; compared case-insensitively.
+  email        String @unique
+  /// bcrypt hash of the password (never the password itself).
+  passwordHash String
+  name         String
+
+  /// Lets us disable an account without deleting it (and its audit trail).
+  isActive Boolean @default(true)
+
+  /// Updated on every successful login — handy for the dashboard.
+  lastLoginAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 /// One line on an Order. The name/price are snapshotted at order time so the

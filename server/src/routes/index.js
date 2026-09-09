@@ -5,7 +5,7 @@
 //    Phase 2  contactRouter     -> /api/contact        ✅ added
 //    Phase 3  reservationRouter -> /api/reservations   ✅ added
 //    Phase 4  orderRouter       -> /api/orders          ✅ added
-//    Phase 5  adminRouter     -> /api/admin
+//    Phase 5  adminRouter       -> /api/admin           ✅ added
 // =========================================================
 
 import { Router } from 'express';
@@ -14,6 +14,7 @@ import { menuRouter } from './menu.routes.js';
 import { contactRouter } from './contact.routes.js';
 import { reservationRouter } from './reservation.routes.js';
 import { orderRouter } from './order.routes.js';
+import { adminRouter } from './admin.routes.js';
 import { readLimiter, writeLimiter } from '../middleware/rateLimit.js';
 
 export const apiRouter = Router();
@@ -23,3 +24,4 @@ apiRouter.use('/menu', readLimiter, menuRouter);
 apiRouter.use('/contact', writeLimiter, contactRouter);
 apiRouter.use('/reservations', writeLimiter, reservationRouter);
 apiRouter.use('/orders', writeLimiter, orderRouter);
+apiRouter.use('/admin', readLimiter, adminRouter);
