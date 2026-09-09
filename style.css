@@ -518,6 +518,10 @@ a { color: inherit; }
 }
 .summary-total span:last-child { color: var(--red); }
 
+/* Customer / delivery details on the order card (Phase 4). Reuses the
+   shared .field / .field-row form styles used by the reservation form. */
+.order-fields { display: grid; gap: 16px; margin: 4px 0 22px; }
+
 .pay-choice { display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap; }
 .pay-choice label {
   display: inline-flex; align-items: center; gap: 8px;

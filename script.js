@@ -286,6 +286,7 @@ const orderMessage  = $('#orderMessage');
 const placeOrderBtn = $('#placeOrder');
 const clearOrderBtn = $('#clearOrder');
 const payChoice     = $('#payChoice');
+const orderFields   = $('#orderFields');
 const cartCount     = $('#cartCount');
 
 function cartQty()   { return cart.reduce((sum, i) => sum + i.qty, 0); }
@@ -341,12 +342,14 @@ function renderCart() {
     orderList.innerHTML =
       '<li class="order-empty">Nothing here yet — add something from the menu.</li>';
     if (orderSummary)  orderSummary.hidden  = true;
+    if (orderFields)   orderFields.hidden   = true;
     if (payChoice)     payChoice.hidden     = true;
     if (clearOrderBtn) clearOrderBtn.hidden = true;
     return;
   }
 
   if (orderSummary)  orderSummary.hidden  = false;
+  if (orderFields)   orderFields.hidden   = false;
   if (payChoice)     payChoice.hidden     = false;
   if (clearOrderBtn) clearOrderBtn.hidden = false;
 
@@ -412,8 +415,41 @@ if (clearOrderBtn) {
   });
 }
 
+// Maps an API field name back to its form control, so server-side
+// validation errors land under the right field.
+function orderFieldInput(field) {
+  return {
+    customerName: $('#ordName'),
+    phone:        $('#ordPhone'),
+    address:      $('#ordAddress'),
+    note:         $('#ordNote'),
+  }[field] || null;
+}
+
+function validateOrderDetails() {
+  let ok = true;
+  const name    = $('#ordName');
+  const phone   = $('#ordPhone');
+  const address = $('#ordAddress');
+
+  if (name && name.value.trim().length < 3) {
+    setError(name, 'Please enter your full name.'); ok = false;
+  } else if (name) setError(name, '');
+
+  const digits = phone ? phone.value.replace(/[\s-]/g, '') : '';
+  if (!/^(\+92|0)3\d{9}$/.test(digits)) {
+    setError(phone, 'Enter a valid Pakistani mobile number.'); ok = false;
+  } else setError(phone, '');
+
+  if (address && address.value.trim().length < 10) {
+    setError(address, 'Please enter a complete delivery address.'); ok = false;
+  } else if (address) setError(address, '');
+
+  return ok;
+}
+
 if (placeOrderBtn) {
-  placeOrderBtn.addEventListener('click', () => {
+  placeOrderBtn.addEventListener('click', async () => {
     if (!orderMessage) return;
 
     if (cart.length === 0) {
@@ -422,18 +458,88 @@ if (placeOrderBtn) {
       return;
     }
 
+    if (!validateOrderDetails()) {
+      orderMessage.textContent = 'Please fill in your delivery details above.';
+      orderMessage.classList.add('error');
+      return;
+    }
+
     const method = $('input[name="pay"]:checked');
-    const label = method && method.value === 'online' ? 'Online payment' : 'Cash on delivery';
-    const total = rs(cartTotal());
+    const payment = method && method.value === 'online' ? 'online' : 'cod';
+    const label = payment === 'online' ? 'Online payment' : 'Cash on delivery';
 
+    // The server re-prices everything from the database — we send only
+    // which items and how many.
+    const payload = {
+      customerName: $('#ordName').value.trim(),
+      phone:        $('#ordPhone').value.trim(),
+      address:      $('#ordAddress').value.trim(),
+      note:         ($('#ordNote') && $('#ordNote').value.trim()) || '',
+      payment,
+      items: cart.map(line => ({ code: line.id, quantity: line.qty })),
+      website: ($('#ordWebsite') && $('#ordWebsite').value) || '', // honeypot
+    };
+
+    const originalLabel = placeOrderBtn.textContent;
+    placeOrderBtn.disabled = true;
+    placeOrderBtn.textContent = 'Placing…';
     orderMessage.classList.remove('error');
-    orderMessage.textContent =
-      `Order confirmed — ${total} · ${label}. We'll call you on the number you provide. (Demo: no real payment)`;
+    orderMessage.textContent = '';
 
-    cart = [];
-    renderCart();
-    toast('Order placed. Thank you!');
+    try {
+      const res = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        const fieldErrors = data && data.error && data.error.details;
+        if (fieldErrors && typeof fieldErrors === 'object' && !Array.isArray(fieldErrors)) {
+          Object.keys(fieldErrors).forEach(field => {
+            const input = orderFieldInput(field);
+            const messages = fieldErrors[field];
+            if (input && messages && messages.length) setError(input, messages[0]);
+          });
+        }
+        // "Some items no longer available" comes back with details.items as a list.
+        const itemMsgs = fieldErrors && Array.isArray(fieldErrors.items) ? fieldErrors.items : null;
+        throw new Error(
+          (itemMsgs && itemMsgs.join(' ')) ||
+          (data && data.error && data.error.message) ||
+          `Request failed (${res.status})`,
+        );
+      }
+
+      const total = typeof data.total === 'number' ? rs(data.total) : rs(cartTotal());
+      orderMessage.classList.remove('error');
+      orderMessage.textContent =
+        `Order placed — ${total} · ${label}. Reference ${data.reference || ''}. We'll call you to confirm.`.replace(' .', '.');
+
+      cart = [];
+      renderCart();
+      const orderForm = $('#orderFields');
+      if (orderForm) $$('input, textarea', orderForm).forEach(el => { el.value = ''; });
+      toast('Order placed. Thank you!');
+    } catch (err) {
+      console.warn('[order] submit failed:', err.message);
+      orderMessage.textContent = err.message && err.message.startsWith('"')
+        ? err.message
+        : 'Sorry — your order could not be placed. Please try again, or call us.';
+      orderMessage.classList.add('error');
+    } finally {
+      placeOrderBtn.disabled = false;
+      placeOrderBtn.textContent = originalLabel;
+    }
   });
+
+  // Clear a field's error as soon as the user starts fixing it.
+  if (orderFields) {
+    $$('input, textarea', orderFields).forEach(input => {
+      input.addEventListener('input', () => setError(input, ''));
+    });
+  }
 }
 
 /* =========================================================
@@ -484,12 +590,28 @@ function validateReservation() {
   return ok;
 }
 
+// Maps an API field name back to its form control, so server-side
+// validation errors land under the right field.
+function reserveFieldInput(field) {
+  return {
+    name:    $('#resName'),
+    phone:   $('#resPhone'),
+    date:    $('#resDate'),
+    time:    $('#resTime'),
+    guests:  $('#resGuests'),
+    seating: $('#resSeat'),
+    note:    $('#resNote'),
+  }[field] || null;
+}
+
 if (reserveForm) {
   // Don't allow past dates in the picker itself
   const resDate = $('#resDate');
   if (resDate) resDate.min = new Date().toISOString().slice(0, 10);
 
-  reserveForm.addEventListener('submit', (e) => {
+  const reserveSubmitBtn = $('button[type="submit"]', reserveForm);
+
+  reserveForm.addEventListener('submit', async (e) => {
     e.preventDefault();
 
     if (!validateReservation()) {
@@ -500,20 +622,65 @@ if (reserveForm) {
       return;
     }
 
-    const name   = $('#resName').value.trim();
-    const guests = $('#resGuests').selectedOptions[0].textContent;
-    const date   = $('#resDate').value;
-    const time   = $('#resTime').value;
+    const name        = $('#resName').value.trim();
+    const guestsLabel  = $('#resGuests').selectedOptions[0].textContent;
+    const date         = $('#resDate').value;
+    const time         = $('#resTime').value;
 
-    if (reserveMsg) {
-      reserveMsg.classList.remove('error');
-      reserveMsg.textContent =
-        `Thanks ${name} — table for ${guests} held for ${date} at ${time}. We'll confirm by phone shortly.`;
+    // --- Send to the backend: POST /api/reservations ---
+    const payload = {
+      name,
+      phone:   $('#resPhone').value.trim(),
+      date,
+      time,
+      guests:  Number($('#resGuests').value),
+      seating: $('#resSeat').value,
+      note:    $('#resNote').value.trim(),
+      website: ($('#resWebsite') && $('#resWebsite').value) || '', // honeypot
+    };
+
+    const originalLabel = reserveSubmitBtn ? reserveSubmitBtn.textContent : '';
+    if (reserveSubmitBtn) { reserveSubmitBtn.disabled = true; reserveSubmitBtn.textContent = 'Sending…'; }
+    if (reserveMsg) { reserveMsg.classList.remove('error'); reserveMsg.textContent = ''; }
+
+    try {
+      const res = await fetch('/api/reservations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        const fieldErrors = data && data.error && data.error.details;
+        if (fieldErrors && typeof fieldErrors === 'object') {
+          Object.keys(fieldErrors).forEach(field => {
+            const input = reserveFieldInput(field);
+            const messages = fieldErrors[field];
+            if (input && messages && messages.length) setError(input, messages[0]);
+          });
+        }
+        throw new Error((data && data.error && data.error.message) || `Request failed (${res.status})`);
+      }
+
+      if (reserveMsg) {
+        reserveMsg.classList.remove('error');
+        reserveMsg.textContent =
+          `Thanks ${name} — table for ${guestsLabel} held for ${date} at ${time}. We'll confirm by phone shortly.`;
+      }
+
+      reserveForm.reset();
+      if (resDate) resDate.min = new Date().toISOString().slice(0, 10);
+      toast('Reservation request sent');
+    } catch (err) {
+      console.warn('[reserve] submit failed:', err.message);
+      if (reserveMsg) {
+        reserveMsg.textContent = 'Sorry — your reservation could not be sent. Please try again, or call us.';
+        reserveMsg.classList.add('error');
+      }
+    } finally {
+      if (reserveSubmitBtn) { reserveSubmitBtn.disabled = false; reserveSubmitBtn.textContent = originalLabel; }
     }
-
-    reserveForm.reset();
-    if (resDate) resDate.min = new Date().toISOString().slice(0, 10);
-    toast('Reservation request sent');
   });
 
   // Clear a field's error as soon as the user starts fixing it
@@ -528,8 +695,16 @@ if (reserveForm) {
 const contactForm = $('#contactForm');
 const formMessage = $('#formMessage');
 
+// Maps an API field name back to its <input> so server-side validation
+// errors can be shown under the right field.
+function contactFieldInput(field) {
+  return { name: $('#cName'), email: $('#cEmail'), message: $('#cMsg') }[field] || null;
+}
+
 if (contactForm) {
-  contactForm.addEventListener('submit', (e) => {
+  const contactSubmitBtn = $('button[type="submit"]', contactForm);
+
+  contactForm.addEventListener('submit', async (e) => {
     e.preventDefault();
 
     const name  = $('#cName');
@@ -556,12 +731,54 @@ if (contactForm) {
       return;
     }
 
-    if (formMessage) {
-      formMessage.classList.remove('error');
-      formMessage.textContent = 'Thank you! Your message has been received.';
+    // --- Send to the backend: POST /api/contact ---
+    const payload = {
+      name:    name.value.trim(),
+      email:   email.value.trim(),
+      message: msg.value.trim(),
+      website: ($('#cWebsite') && $('#cWebsite').value) || '', // honeypot — empty for real users
+    };
+
+    const originalLabel = contactSubmitBtn ? contactSubmitBtn.textContent : '';
+    if (contactSubmitBtn) { contactSubmitBtn.disabled = true; contactSubmitBtn.textContent = 'Sending…'; }
+    if (formMessage) { formMessage.classList.remove('error'); formMessage.textContent = ''; }
+
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        // Surface per-field messages from the API, if any.
+        const fieldErrors = data && data.error && data.error.details;
+        if (fieldErrors && typeof fieldErrors === 'object') {
+          Object.keys(fieldErrors).forEach(field => {
+            const input = contactFieldInput(field);
+            const messages = fieldErrors[field];
+            if (input && messages && messages.length) setError(input, messages[0]);
+          });
+        }
+        throw new Error((data && data.error && data.error.message) || `Request failed (${res.status})`);
+      }
+
+      if (formMessage) {
+        formMessage.classList.remove('error');
+        formMessage.textContent = data.message || 'Thank you! Your message has been received.';
+      }
+      contactForm.reset();
+      toast('Message sent');
+    } catch (err) {
+      console.warn('[contact] submit failed:', err.message);
+      if (formMessage) {
+        formMessage.textContent = 'Sorry — your message could not be sent. Please try again, or call us.';
+        formMessage.classList.add('error');
+      }
+    } finally {
+      if (contactSubmitBtn) { contactSubmitBtn.disabled = false; contactSubmitBtn.textContent = originalLabel; }
     }
-    contactForm.reset();
-    toast('Message sent');
   });
 
   $$('input, textarea', contactForm).forEach(input => {

@@ -163,6 +163,33 @@
       <div class="summary-row summary-total"><span>Total</span><span id="orderTotal">Rs. 0</span></div>
     </div>
 
+    <div class="order-fields" id="orderFields" hidden>
+      <div class="field-row">
+        <div class="field">
+          <label for="ordName">Full name</label>
+          <input type="text" id="ordName" name="customerName" placeholder="e.g. Syed Musarrat" autocomplete="name">
+          <small class="error" data-error-for="ordName"></small>
+        </div>
+        <div class="field">
+          <label for="ordPhone">Phone</label>
+          <input type="tel" id="ordPhone" name="phone" placeholder="03XXXXXXXXX" autocomplete="tel">
+          <small class="error" data-error-for="ordPhone"></small>
+        </div>
+      </div>
+      <div class="field">
+        <label for="ordAddress">Delivery address</label>
+        <textarea id="ordAddress" name="address" rows="2" placeholder="House / flat, street, area, city" autocomplete="street-address"></textarea>
+        <small class="error" data-error-for="ordAddress"></small>
+      </div>
+      <div class="field">
+        <label for="ordNote">Note for the rider <span class="optional">(optional)</span></label>
+        <textarea id="ordNote" name="note" rows="2" placeholder="Landmark, gate code, no onions…"></textarea>
+        <small class="error" data-error-for="ordNote"></small>
+      </div>
+      <!-- Anti-spam honeypot: hidden from real users; bots that fill it are ignored. -->
+      <input type="text" id="ordWebsite" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" hidden>
+    </div>
+
     <div class="pay-choice" id="payChoice" hidden>
       <label><input type="radio" name="pay" value="cod" checked> Cash on Delivery</label>
       <label><input type="radio" name="pay" value="online"> Pay Online</label>
@@ -245,6 +272,8 @@
         <textarea id="resNote" name="note" rows="3" placeholder="Birthday cake, high chair, quiet corner…"></textarea>
       </div>
 
+      <!-- Anti-spam honeypot: hidden from real users; bots that fill it are ignored. -->
+      <input type="text" id="resWebsite" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" hidden>
       <button type="submit" class="btn btn-gold btn-block">Confirm Reservation</button>
       <p id="reserveMessage" class="form-message" role="status" aria-live="polite"></p>
     </form>
@@ -363,6 +392,9 @@
         <textarea id="cMsg" rows="5" placeholder="How can we help?" required></textarea>
         <small class="error" data-error-for="cMsg"></small>
       </div>
+      <!-- Anti-spam honeypot: hidden from real users. Bots that fill every
+           field trip it and the server silently ignores the submission. -->
+      <input type="text" id="cWebsite" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" hidden>
       <button type="submit" class="btn btn-primary btn-block">Send Message</button>
       <p id="formMessage" class="form-message" role="status" aria-live="polite"></p>
     </form>

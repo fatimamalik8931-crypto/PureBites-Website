@@ -1,9 +1,9 @@
 // =========================================================
 //  Pure Bites — database schema
 //  Phase 0: MenuItem only. More models are added per phase:
-//    Phase 2  ContactMessage
-//    Phase 3  Reservation
-//    Phase 4  Order + OrderItem
+//    Phase 2  ContactMessage    ✅ added
+//    Phase 3  Reservation        ✅ added
+//    Phase 4  Order + OrderItem  ✅ added
 //    Phase 5  AdminUser
 //
 //  Dev database: SQLite (a single file at prisma/dev.db).
@@ -47,4 +47,115 @@ model MenuItem {
 
   @@index([category, sortOrder])
   @@index([isAvailable, sortOrder])
+}
+
+/// A message submitted through the public contact form (#contactForm on the
+/// site). Every submission is stored here first; an email notification is a
+/// best-effort extra on top (see src/lib/mailer.js).
+model ContactMessage {
+  id      String @id @default(cuid())
+  name    String
+  email   String
+  message String
+
+  /// Request metadata, captured for spam triage. Nullable — we never block
+  /// a submission just because these are missing.
+  ipAddress String?
+  userAgent String?
+
+  /// Flipped to true from the admin dashboard (a later phase) once the
+  /// message has been dealt with.
+  isHandled Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@index([isHandled, createdAt])
+}
+
+/// A table-booking request from the public reservation form (#reserveForm).
+/// Like ContactMessage: always stored; the email notification is a
+/// best-effort extra. The restaurant confirms each booking by phone.
+model Reservation {
+  id    String @id @default(cuid())
+  name  String
+  phone String
+
+  /// The local date (YYYY-MM-DD) and time (HH:MM) exactly as the guest picked.
+  date String
+  time String
+  /// date + time combined into an absolute instant (Asia/Karachi, UTC+5),
+  /// so the admin dashboard can sort/filter bookings chronologically.
+  reservedAt DateTime
+
+  guests  Int
+  seating String // "Indoor" | "Outdoor" | "Family cabin"
+  note    String @default("")
+
+  /// Set from the admin dashboard (a later phase): pending → confirmed | cancelled.
+  status String @default("pending")
+
+  ipAddress String?
+  userAgent String?
+
+  createdAt DateTime @default(now())
+
+  @@index([reservedAt])
+  @@index([status, reservedAt])
+}
+
+/// A delivery order placed from the public #order card on the site.
+///
+/// Money rule: every amount here (unitPrice, lineTotal, subtotal, total) is
+/// recomputed on the server from the current MenuItem rows. The client sends
+/// only item codes and quantities — never prices or totals it could tamper with.
+model Order {
+  id String @id @default(cuid())
+  /// Short, human-friendly reference shown to the customer and used by staff
+  /// on the phone, e.g. "PB-3F9K2". Unique.
+  reference String @unique
+
+  customerName String
+  phone        String
+  address      String
+  note         String @default("")
+
+  /// "cod" (cash on delivery) | "online" (marked as a request only — no real
+  /// payment gateway is wired up yet).
+  paymentMethod String
+  /// Set from the admin dashboard (a later phase):
+  /// pending → confirmed → preparing → out_for_delivery → delivered | cancelled.
+  status String @default("pending")
+
+  /// All whole Pakistani rupees. Integers on purpose — never store money as a float.
+  subtotal    Int
+  deliveryFee Int @default(0)
+  total       Int
+
+  ipAddress String?
+  userAgent String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items OrderItem[]
+
+  @@index([status, createdAt])
+  @@index([createdAt])
+}
+
+/// One line on an Order. The name/price are snapshotted at order time so the
+/// order history stays correct even after the menu changes or an item is removed.
+model OrderItem {
+  id      String @id @default(cuid())
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  /// The MenuItem.code ("b1", "f3") this line was ordered from.
+  menuItemCode String
+  name         String
+  unitPrice    Int
+  quantity     Int
+  lineTotal    Int
+
+  @@index([orderId])
 }
