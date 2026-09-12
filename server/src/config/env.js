@@ -40,6 +40,23 @@ if (!parsed.success) {
 
 const data = parsed.data;
 
+// ---- Production safety checks (Phase 8) ----
+// Refuse to boot in production with settings that would make the admin
+// session cookie forgeable.
+if (data.NODE_ENV === 'production') {
+  const KNOWN_PLACEHOLDERS = ['dev-only-secret-change-me', 'change-me-to-a-long-random-string'];
+  if (data.SESSION_SECRET.length < 32 || KNOWN_PLACEHOLDERS.includes(data.SESSION_SECRET)) {
+    console.error(
+      '\n❌ SESSION_SECRET must be a random string of at least 32 characters in production.\n' +
+        '   Generate one with:  node -e "console.log(require(\'crypto\').randomBytes(48).toString(\'hex\'))"\n',
+    );
+    process.exit(1);
+  }
+  if (/localhost|127\.0\.0\.1/.test(data.CLIENT_ORIGIN)) {
+    console.warn('⚠  CLIENT_ORIGIN still points at localhost — set it to your real site URL.');
+  }
+}
+
 export const env = {
   ...data,
   isProd: data.NODE_ENV === 'production',

@@ -31,6 +31,15 @@ export function errorHandler(err, req, res, next) {
     message = 'Some fields are invalid.';
     code = 'VALIDATION_ERROR';
     details = err.flatten().fieldErrors;
+  } else if (err?.type === 'entity.too.large') {
+    // body-parser: JSON body over 100 kb, or an image upload over 2 MB
+    status = 413;
+    message = 'That request is too large. Images must be 2 MB or smaller.';
+    code = 'PAYLOAD_TOO_LARGE';
+  } else if (err?.type === 'entity.parse.failed') {
+    status = 400;
+    message = 'The request body is not valid JSON.';
+    code = 'INVALID_JSON';
   } else if (err instanceof Prisma.PrismaClientKnownRequestError) {
     // e.g. P2002 = unique constraint violation
     if (err.code === 'P2002') {

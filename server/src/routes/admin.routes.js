@@ -13,8 +13,14 @@
 //    requireAdmin → 200 { admin: { id, email, name } } | 401
 //
 //  The login route carries the strict authLimiter (8 tries / 15 min / IP)
-//  to slow brute-force guessing. The rest use the generous readLimiter
-//  applied at the mount point in routes/index.js.
+//  to slow brute-force guessing. The rest use the adminLimiter applied
+//  at the mount point in routes/index.js.
+//
+//  Below the auth routes, every other /api/admin/* route requires a
+//  signed-in admin:
+//    Phase 6  dashboard (stats, orders, reservations, messages, password)
+//             → admin.dashboard.routes.js
+//    Phase 7  menu management + image uploads → admin.menu.routes.js
 // =========================================================
 
 import { Router } from 'express';
@@ -27,6 +33,9 @@ import { authenticateAdmin } from '../services/admin.service.js';
 import { setAdminCookie, clearAdminCookie } from '../lib/adminSession.js';
 import { ApiError } from '../lib/ApiError.js';
 import { logger } from '../lib/logger.js';
+import { requireJsonBody } from '../middleware/requireJsonBody.js';
+import { adminDashboardRouter } from './admin.dashboard.routes.js';
+import { adminMenuRouter, adminUploadRouter } from './admin.menu.routes.js';
 
 export const adminRouter = Router();
 
@@ -65,3 +74,13 @@ adminRouter.get(
     res.json({ admin: req.admin });
   }),
 );
+
+// ---- Everything below needs a signed-in admin ----
+adminRouter.use(requireAdmin);
+
+// Uploads send raw image bytes, so they're mounted before the JSON-only guard.
+adminRouter.use('/uploads', adminUploadRouter);
+
+adminRouter.use(requireJsonBody);
+adminRouter.use('/menu', adminMenuRouter);
+adminRouter.use(adminDashboardRouter);

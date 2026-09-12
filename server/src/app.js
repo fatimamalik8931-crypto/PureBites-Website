@@ -18,11 +18,26 @@ import { logger } from './lib/logger.js';
 import { apiRouter } from './routes/index.js';
 import { notFound } from './middleware/notFound.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import { UPLOAD_DIR, ensureUploadDir } from './lib/uploads.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // The existing static frontend lives at the project root (one level above server/).
 const FRONTEND_DIR = path.resolve(__dirname, '../../');
+// The admin dashboard UI (Phase 6) lives in its own folder next to it.
+const ADMIN_DIR = path.join(FRONTEND_DIR, 'admin');
+
+/**
+ * The only project-root files the public site needs. We serve this explicit
+ * list instead of the whole folder — the project root also contains server/
+ * (source code, package files and the SQLite database with customer data),
+ * none of which may ever be downloadable.
+ */
+const PUBLIC_FILES = ['index.html', 'style.css', 'script.js'];
+
+const noCacheHtml = (res, filePath) => {
+  if (filePath.endsWith('.html')) res.setHeader('Cache-Control', 'no-cache');
+};
 
 export function createApp() {
   const app = express();
@@ -83,17 +98,28 @@ export function createApp() {
   // Unknown /api/* route -> JSON 404 (non-API paths fall through to static files).
   app.use('/api', notFound);
 
-  // ---- Static frontend ----
-  // Serves index.html, style.css, script.js exactly as they are on disk.
+  // ---- Uploaded menu images (Phase 7) ----
+  // Random, never-reused filenames, so they can be cached for a long time.
+  ensureUploadDir();
+  app.use('/uploads', express.static(UPLOAD_DIR, { index: false, immutable: true, maxAge: '30d' }));
+
+  // ---- Admin dashboard UI (Phase 6) ----
   app.use(
-    express.static(FRONTEND_DIR, {
-      index: 'index.html',
-      extensions: ['html'],
-      setHeaders: (res, filePath) => {
-        if (filePath.endsWith('.html')) res.setHeader('Cache-Control', 'no-cache');
-      },
-    }),
+    '/admin',
+    (req, res, next) => {
+      res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+      next();
+    },
+    express.static(ADMIN_DIR, { index: 'index.html', setHeaders: noCacheHtml }),
   );
+
+  // ---- Public site ----
+  // Serves index.html, style.css, script.js exactly as they are on disk.
+  app.get(['/', ...PUBLIC_FILES.map((f) => `/${f}`)], (req, res, next) => {
+    const file = req.path === '/' ? 'index.html' : req.path.slice(1);
+    const headers = file.endsWith('.html') ? { 'Cache-Control': 'no-cache' } : {};
+    res.sendFile(path.join(FRONTEND_DIR, file), { headers }, (err) => err && next(err));
+  });
 
   // ---- Error handler (must be last) ----
   app.use(errorHandler);

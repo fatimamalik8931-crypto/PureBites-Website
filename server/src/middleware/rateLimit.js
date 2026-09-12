@@ -29,6 +29,13 @@ export const writeLimiter = rateLimit({
   max: 20,
 });
 
+/** Admin dashboard traffic — staff click around a lot, so roomier than readLimiter. */
+export const adminLimiter = rateLimit({
+  ...common,
+  windowMs: 15 * 60 * 1000,
+  max: 1000,
+});
+
 /** Strict limit for the admin login route — slows brute-force attempts. */
 export const authLimiter = rateLimit({
   ...common,

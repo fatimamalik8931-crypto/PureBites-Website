@@ -25,6 +25,7 @@ npm run dev                 # http://localhost:4000  (auto-restarts on change)
 ```
 
 - Frontend:     http://localhost:4000/
+- Admin:        http://localhost:4000/admin/  (sign in with ADMIN_EMAIL / ADMIN_PASSWORD from `.env`)
 - Health check: http://localhost:4000/api/health
 
 ## API — public menu
@@ -135,6 +136,117 @@ longer be ordered.
 Stored as an `Order` row plus one `OrderItem` per line (name + price
 snapshotted at order time). Same best-effort email as above.
 
+## Admin dashboard
+
+The staff UI lives at **`/admin/`** (files in the project-root `admin/` folder,
+plain HTML/CSS/JS, no build step). It covers everything below: overview
+numbers, orders, reservations, messages, menu editing with photo upload, and
+changing your password. It is sent with `X-Robots-Tag: noindex`.
+
+There is no public sign-up. The first account is created by `npm run db:seed`
+from `ADMIN_EMAIL` / `ADMIN_PASSWORD` / `ADMIN_NAME`.
+
+## API — admin auth
+
+| Method | Path | Purpose |
+|---|---|---|
+| POST | `/api/admin/login` | `{ email, password }` → sets the `pb_admin` cookie. `authLimiter`: 8 tries / 15 min / IP |
+| POST | `/api/admin/logout` | Clears the cookie |
+| GET | `/api/admin/me` | The signed-in admin, or 401 |
+
+The cookie is signed, `httpOnly`, `SameSite=Lax`, and `Secure` in production.
+**Every other `/api/admin/*` route returns 401 without it.** Write requests
+(POST/PUT/PATCH) must be `application/json` (415 otherwise), which is a second CSRF
+guard on top of SameSite. Image uploads are the one exception (raw image body).
+All admin routes share `adminLimiter` (1000 requests / 15 min / IP).
+
+## API — admin dashboard
+
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/api/admin/meta` | `{ orderStatuses, reservationStatuses, menuCategories }` |
+| GET | `/api/admin/stats` | Orders + revenue today (Pakistan time, cancelled excluded), pending/in-progress orders, pending/upcoming bookings, unhandled messages, menu counts |
+| GET | `/api/admin/orders` | `?status=&q=&page=&pageSize=` · `q` matches reference, name or phone |
+| GET | `/api/admin/orders/:id` | One order with its items |
+| PATCH | `/api/admin/orders/:id/status` | `{ status }` |
+| GET | `/api/admin/reservations` | `?status=&when=upcoming\|past\|all&q=&page=&pageSize=` |
+| PATCH | `/api/admin/reservations/:id/status` | `{ status }` |
+| GET | `/api/admin/messages` | `?handled=true\|false&q=&page=&pageSize=` |
+| PATCH | `/api/admin/messages/:id` | `{ isHandled }` |
+| DELETE | `/api/admin/messages/:id` | Remove (e.g. spam) |
+| PATCH | `/api/admin/password` | `{ currentPassword, newPassword }` (new ≥ 10 chars) |
+
+List responses: `{ items, page, pageSize, total, totalPages }` (`pageSize` ≤ 100, default 20).
+
+**Status flows.** Each order and reservation includes `nextStatuses`, the moves
+allowed right now. Anything else returns `409 INVALID_TRANSITION`.
+
+```
+Order:        pending → confirmed → preparing → out_for_delivery → delivered
+              (any of the first four) → cancelled
+Reservation:  pending → confirmed
+              pending | confirmed → cancelled
+```
+
+`delivered` and `cancelled` are final. Updates are conditional on the status
+that was read, so two staff clicking at once can't both win (`409 STALE`).
+
+## API — menu management
+
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/api/admin/menu` | Every item, hidden ones included |
+| POST | `/api/admin/menu` | Create → `201 { item }` |
+| PATCH | `/api/admin/menu/:code` | Partial update (the code can't change) |
+| DELETE | `/api/admin/menu/:code` | Delete permanently |
+| POST | `/api/admin/uploads` | Upload a photo → `201 { url }` |
+
+Item fields: `code` (≤ 20 lowercase letters/digits/`-`/`_`, unique),
+`category` (`burgers`/`sandwiches`/`sides`/`drinks`), `name` 2–80,
+`description` 5–300, `price` whole rupees 1–100000, `tag` ≤ 30,
+`imageUrl`, `isAvailable`, `isFeatured`, `sortOrder` (defaults to the end of the menu).
+
+- `imageUrl` must be an uploaded `/uploads/…` file or an `https://images.unsplash.com/…`
+  link. Those are the only image sources the site's Content-Security-Policy allows,
+  so anything else would show as a broken image.
+- To take an item off the site temporarily, set `isAvailable: false`. Deleting is
+  also safe for history, because past orders keep their own copy of name and price.
+- **Uploads**: send the raw file as the request body with `Content-Type: image/jpeg`,
+  `image/png` or `image/webp`, max 2 MB. The real type is checked from the file's
+  bytes, and the server picks a random filename. Files are stored in `server/uploads/`
+  (git-ignored) and served at `/uploads/…`. A photo is deleted automatically once no
+  menu item uses it.
+
+## Security notes
+
+- Only `index.html`, `style.css`, `script.js`, `admin/` and `uploads/` are served
+  as static files. The project root is **not** served wholesale, so `server/` (source, the
+  SQLite database) can never be downloaded.
+- Customer-submitted text is rendered in the admin UI with `textContent` only.
+- In production the server refuses to start unless `SESSION_SECRET` is at least 32
+  random characters.
+
+## Deploying (production checklist)
+
+These steps need decisions from you (host, database, domain):
+
+1. **Database**: create a PostgreSQL database (e.g. Neon, Supabase, Railway, Render).
+   In `prisma/schema.prisma` change `provider = "sqlite"` to `"postgresql"`. The
+   existing migrations are SQLite SQL, so on a fresh Postgres run
+   `npx prisma migrate dev --name init` once locally against Postgres to generate a
+   Postgres baseline (after moving the old `migrations/` folder aside), commit it, then use
+   `npm run prisma:deploy` on the server.
+2. **Environment** on the host:
+   `NODE_ENV=production`, `DATABASE_URL=<postgres url>`,
+   `SESSION_SECRET=<node -e "console.log(require('crypto').randomBytes(48).toString('hex'))">`,
+   `CLIENT_ORIGIN=https://your-domain`, a strong `ADMIN_PASSWORD`, and the SMTP settings.
+3. **Build/start commands**: `npm ci && npx prisma generate && npm run prisma:deploy`, then
+   `npm run db:seed` once, then `npm start`.
+4. **Uploads** are written to local disk (`server/uploads/`). Pick a host with a
+   persistent disk/volume, or the photos vanish on each redeploy.
+5. Serve over **HTTPS**, which the `Secure` admin cookie requires. `trust proxy` is already set.
+6. After the first login, change the admin password from **/admin → Account**.
+
 ## Useful commands
 
 | Command | What it does |
@@ -142,6 +254,7 @@ snapshotted at order time). Same best-effort email as above.
 | `npm run dev` | Start the server with auto-reload |
 | `npm start` | Start the server once (production style) |
 | `npm run prisma:migrate` | Create/apply a new migration |
+| `npm run prisma:deploy` | Apply committed migrations (production) |
 | `npm run db:seed` | Re-load menu seed data (safe to re-run) |
 | `npm run prisma:studio` | Open a visual database browser |
 | `npm run db:reset` | Wipe the dev database and re-seed (destructive) |
@@ -163,29 +276,47 @@ server/
       logger.js          # pino logger
       ApiError.js        # typed HTTP errors
       mailer.js          # best-effort email notifications (Nodemailer)
+      password.js        # bcrypt hash / verify
+      adminSession.js    # signed httpOnly admin cookie
+      listing.js         # pagination + case-insensitive search helpers
+      uploads.js         # image upload checks, storage, cleanup
     middleware/
       asyncHandler.js    # forwards async errors to Express
       validate.js        # Zod request validation -> req.valid
       errorHandler.js    # central error -> JSON response
       notFound.js        # 404 for unknown /api routes
-      rateLimit.js       # read / write / auth limiters
+      rateLimit.js       # read / write / admin / auth limiters
+      requireAdmin.js    # 401 unless signed in
+      requireJsonBody.js # admin writes must be JSON (CSRF guard)
     validators/
-      menu.validators.js        # query + param schemas for the menu API
-      contact.validators.js     # body schema for the contact form
-      reservation.validators.js # body schema for the booking form
-      order.validators.js       # body schema for the order form
+      menu.validators.js           # query + param schemas for the menu API
+      contact.validators.js        # body schema for the contact form
+      reservation.validators.js    # body schema for the booking form
+      order.validators.js          # body schema for the order form
+      admin.validators.js          # login body
+      adminDashboard.validators.js # dashboard + menu management schemas
     services/
-      menu.service.js        # menu queries + response shaping
-      contact.service.js     # store message + trigger notification email
-      reservation.service.js # store booking + trigger notification email
-      order.service.js       # price the basket from the DB, store order + items
+      menu.service.js           # menu queries + response shaping
+      contact.service.js        # store message + trigger notification email
+      reservation.service.js    # store booking + trigger notification email
+      order.service.js          # price the basket from the DB, store order + items
+      admin.service.js          # check login credentials
+      adminDashboard.service.js # stats, lists, status flows, password change
+      adminMenu.service.js      # menu create / update / delete
     routes/
-      index.js               # mounts all /api routers
-      health.routes.js       # GET /api/health
-      menu.routes.js         # GET /api/menu, /api/menu/:id
-      contact.routes.js      # POST /api/contact
-      reservation.routes.js  # POST /api/reservations
-      order.routes.js        # POST /api/orders
+      index.js                  # mounts all /api routers
+      health.routes.js          # GET /api/health
+      menu.routes.js            # GET /api/menu, /api/menu/:id
+      contact.routes.js         # POST /api/contact
+      reservation.routes.js     # POST /api/reservations
+      order.routes.js           # POST /api/orders
+      admin.routes.js           # login/logout/me + gate for everything below
+      admin.dashboard.routes.js # /api/admin/stats, orders, reservations, messages, password
+      admin.menu.routes.js      # /api/admin/menu, /api/admin/uploads
     app.js               # Express app (middleware + routes + static)
     server.js            # starts the HTTP listener
+  uploads/               # uploaded menu photos (git-ignored, created on start)
+
+admin/                   # (project root) the admin dashboard UI
+  index.html · admin.css · admin.js
 ```
